@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>BillSplit</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <!-- Receipt image generator -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+    </script>
+
+
+    <!--
+        PRINT / PDF SETTINGS
+
+        The PDF uses the SAME receipt that appears
+        on the screen.
+
+        This prevents the PDF from having a
+        completely different design.
+    -->
+
+    <style>
+
+        @page {
+            size: A4 portrait;
+            margin: 7mm;
+        }
+
+        @media print {
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            html,
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+            }
+
+            /*
+                Hide the normal application while
+                keeping the receipt visible.
+            */
+
+            body > .app > * {
+                visibility: hidden !important;
+            }
+
+            #receiptContainer,
+            #receiptContainer * {
+                visibility: visible !important;
+            }
+
+            #receiptContainer {
+
+                display: block !important;
+
+                position: absolute !important;
+
+                left: 50% !important;
+
+                top: 0 !important;
+
+                width: 190mm !important;
+
+                margin: 0 !important;
+
+                padding: 0 !important;
+
+                transform:
+                    translateX(-50%) !important;
+            }
+
+            #receipt {
+
+                width: 100% !important;
+
+                max-width: none !important;
+
+                margin: 0 !important;
+
+                box-shadow: none !important;
+            }
+
+            /*
+                Hide receipt buttons from the PDF.
+            */
+
+            .receipt-actions,
+            #downloadJpgBtn,
+            #printReceiptBtn,
+            #shareReceiptBtn,
+            #closeReceiptBtn {
+                display: none !important;
+            }
+
+            /*
+                Prevent ordinary receipt sections
+                from breaking unnecessarily.
+            */
+
+            .receipt-section,
+            .receipt-expense,
+            .receipt-settlement,
+            .receipt-header,
+            .receipt-footer,
+            .verification {
+
+                page-break-inside: avoid !important;
+
+                break-inside: avoid !important;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="app">
+
+
+    <!-- =========================
+         HERO
+    ========================== -->
+
+    <header class="hero">
+
+        <div class="sun">
+            ☀️
+        </div>
+
+        <div class="cloud cloud1">
+            ☁️
+        </div>
+
+        <div class="cloud cloud2">
+            ☁️
+        </div>
+
+        <div class="palm palm-left">
+            🌴
+        </div>
+
+        <div class="palm palm-right">
+            🌴
+        </div>
+
+        <div class="travel travel1">
+            🧳
+        </div>
+
+        <div class="travel travel2">
+            🍹
+        </div>
+
+        <div class="travel travel3">
+            ✈️
+        </div>
+
+
+        <div class="hero-text">
+
+            <h1>
+                BILLSPLIT
+            </h1>
+
+            <p>
+                Split expenses. Settle easily.
+            </p>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- =========================
+         BILL
+    ========================== -->
+<!-- =========================
+     BILLSPLIT DASHBOARD
+========================= -->
+
+<section class="dashboard-card" id="dashboard">
+
+    <div class="dashboard-header">
+
+        <div>
+            <span class="dashboard-kicker">
+                BILLSPLIT DASHBOARD
+            </span>
+
+            <h2>
+                Welcome to BillSplit 👋
+            </h2>
+
+            <p>
+                Manage your shared expenses with ease.
+            </p>
+        </div>
+
+        <div class="dashboard-icon">
+            💳
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-stats">
+
+        <div class="dashboard-stat">
+
+            <span>
+                🧾
+            </span>
+
+            <small>
+                Total Bills
+            </small>
+
+            <strong id="dashboardBills">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="dashboard-stat">
+
+            <span>
+                💰
+            </span>
+
+            <small>
+                Total Amount
+            </small>
+
+            <strong id="dashboardAmount">
+                ₦0
+            </strong>
+
+        </div>
+
+
+        <div class="dashboard-stat">
+
+            <span>
+                👥
+            </span>
+
+            <small>
+                People Served
+            </small>
+
+            <strong id="dashboardPeople">
+                0
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-actions">
+
+        <button
+            id="dashboardNewBillBtn"
+        >
+            ➕ Create New Bill
+        </button>
+
+        <button
+            id="dashboardHistoryBtn"
+        >
+            📚 Bill History
+        </button>
+
+    </div>
+
+</section>
+    <section class="card">
+
+        <h2>
+            📝 Create Your Bill
+        </h2>
+
+
+        <label for="billName">
+            Bill Name
+        </label>
+
+        <input
+            type="text"
+            id="billName"
+            placeholder="e.g. Weekend Hangout"
+        >
+
+
+        <button id="saveBillBtn">
+            Save Bill
+        </button>
+
+
+        <button
+            id="newBillBtn"
+            class="new-bill-btn"
+        >
+            🆕 New Bill
+        </button>
+
+
+        <p id="billMessage"></p>
+
+    </section>
+
+
+
+    <!-- =========================
+         PARTICIPANTS
+    ========================== -->
+
+    <section class="card">
+
+        <h2>
+            👥 Participants
+        </h2>
+
+
+        <div class="input-row">
+
+            <input
+                type="text"
+                id="participantName"
+                placeholder="Enter participant name"
+            >
+
+            <button id="addParticipantBtn">
+                Add
+            </button>
+
+        </div>
+
+
+        <div id="participantList"></div>
+
+    </section>
+
+
+
+    <!-- =========================
+         EXPENSE
+    ========================== -->
+
+    <section class="card">
+
+        <h2>
+            💰 Add Expense
+        </h2>
+
+
+        <label for="expenseName">
+            Expense description
+        </label>
+
+        <input
+            type="text"
+            id="expenseName"
+            placeholder="e.g. Food"
+        >
+
+
+        <label for="expenseAmount">
+            Amount
+        </label>
+
+        <input
+            type="number"
+            id="expenseAmount"
+            placeholder="e.g. 20000"
+        >
+
+
+        <label for="paidBy">
+            Who paid?
+        </label>
+
+        <select id="paidBy">
+
+            <option value="">
+                Select participant
+            </option>
+
+        </select>
+
+
+        <button id="addExpenseBtn">
+            Add Expense
+        </button>
+
+    </section>
+
+
+
+    <!-- =========================
+         EXPENSE LIST
+    ========================== -->
+
+    <section class="card">
+
+        <div class="section-title">
+
+            <h2>
+                📋 Expenses
+            </h2>
+
+            <strong>
+
+                Total:
+
+                ₦<span id="totalAmount">
+                    0
+                </span>
+
+            </strong>
+
+        </div>
+
+
+        <div id="expenseList"></div>
+
+    </section>
+
+
+
+    <!-- =========================
+         CALCULATE
+    ========================== -->
+
+    <section class="calculate-box">
+
+        <button id="calculateBtn">
+            🧮 Calculate Bill
+        </button>
+
+    </section>
+
+
+
+    <!-- =========================
+         RESULT
+    ========================== -->
+
+    <section
+        class="card result"
+        id="resultSection"
+    >
+
+        <h2>
+            💳 Bill Summary
+        </h2>
+
+
+        <div class="summary">
+
+
+            <div>
+
+                <span>
+                    Total Bill
+                </span>
+
+                <strong>
+
+                    ₦<span id="resultTotal">
+                        0
+                    </span>
+
+                </strong>
+
+            </div>
+
+
+
+            <div>
+
+                <span>
+                    People
+                </span>
+
+                <strong id="resultPeople">
+                    0
+                </strong>
+
+            </div>
+
+
+
+            <div>
+
+                <span>
+                    Each Person
+                </span>
+
+                <strong>
+
+                    ₦<span id="resultShare">
+                        0
+                    </span>
+
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+        <h3>
+            🤝 Settlement
+        </h3>
+
+
+        <div id="settlement"></div>
+
+
+        <div class="receipt-button-area">
+
+            <button id="receiptBtn">
+                🧾 Generate Receipt
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         BILL SPLIT RECEIPT
+    ====================================================== -->
+
+    <section
+        class="receipt-container"
+        id="receiptContainer"
+    >
+
+
+        <div
+            class="receipt"
+            id="receipt"
+        >
+
+
+            <!-- RECEIPT TOP -->
+
+            <div class="receipt-top-decoration">
+
+                <span></span>
+
+                <span></span>
+
+                <span></span>
+
+            </div>
+
+
+
+            <!-- RECEIPT HEADER -->
+
+            <div class="receipt-header">
+
+
+                <div class="receipt-brand">
+
+
+                    <div class="receipt-logo">
+                        🌴
+                    </div>
+
+
+                    <div>
+
+                        <h1>
+                            BILLSPLIT
+                        </h1>
+
+                        <p>
+                            Smart Expense Management
+                        </p>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <div class="certificate-label">
+
+                    DIGITAL
+                    <br>
+
+                    SETTLEMENT
+                    <br>
+
+                    RECEIPT
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- RECEIPT NUMBER -->
+
+            <div class="receipt-number-box">
+
+
+                <div>
+
+                    <small>
+                        RECEIPT NUMBER
+                    </small>
+
+                    <strong id="receiptNumber">
+                        BS-000000
+                    </strong>
+
+                </div>
+
+
+
+                <div>
+
+                    <small>
+                        DATE & TIME
+                    </small>
+
+                    <strong id="receiptDate">
+                        -
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- BILL -->
+
+            <div class="receipt-title">
+
+                <small>
+                    BILL / EVENT
+                </small>
+
+                <h2 id="receiptBillName">
+                    BillSplit Bill
+                </h2>
+
+            </div>
+
+
+
+            <!-- MAIN TOTAL -->
+
+            <div class="grand-total">
+
+                <span>
+                    TOTAL EXPENSE
+                </span>
+
+                <strong id="receiptTotal">
+                    ₦0
+                </strong>
+
+                <small>
+
+                    Shared among
+
+                    <b id="receiptPeople">
+                        0
+                    </b>
+
+                    participants
+
+                </small>
+
+            </div>
+
+
+
+            <!-- SUMMARY -->
+
+            <div class="receipt-summary">
+
+
+                <div>
+
+                    <span>
+                        Participants
+                    </span>
+
+                    <strong id="receiptPeople2">
+                        0
+                    </strong>
+
+                </div>
+
+
+
+                <div>
+
+                    <span>
+                        Per Person
+                    </span>
+
+                    <strong id="receiptShare">
+                        ₦0
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- EXPENSES -->
+
+            <div class="receipt-section">
+
+
+                <div class="receipt-section-title">
+
+                    <h3>
+                        📋 Expense Breakdown
+                    </h3>
+
+                    <span>
+                        PAID
+                    </span>
+
+                </div>
+
+
+                <div id="receiptExpenses"></div>
+
+            </div>
+
+
+
+            <!-- SETTLEMENT -->
+
+            <div class="receipt-section">
+
+
+                <div class="receipt-section-title">
+
+                    <h3>
+                        🤝 Settlement Instructions
+                    </h3>
+
+                    <span>
+                        BALANCE
+                    </span>
+
+                </div>
+
+
+                <div id="receiptSettlement"></div>
+
+            </div>
+
+
+
+            <!-- VERIFIED -->
+
+            <div class="verification">
+
+
+                <div class="verification-icon">
+                    ✓
+                </div>
+
+
+                <div>
+
+                    <strong>
+                        BILL CALCULATED
+                    </strong>
+
+                    <p>
+                        This digital receipt was generated
+                        by BillSplit.
+                    </p>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- FOOTER -->
+
+            <div class="receipt-footer">
+
+
+                <div class="receipt-qr-placeholder">
+
+                    <div class="qr-grid">
+                        ▦
+                    </div>
+
+                    <small>
+                        Receipt ID
+                    </small>
+
+                </div>
+
+
+
+                <div class="receipt-footer-text">
+
+                    <strong>
+                        BillSplit
+                    </strong>
+
+                    <p>
+                        Split expenses. Settle easily.
+                    </p>
+
+                    <small>
+                        Keep this receipt for your records.
+                    </small>
+
+                </div>
+
+
+            </div>
+
+
+
+            <div class="receipt-bottom-line"></div>
+
+
+        </div>
+
+
+
+        <!-- RECEIPT ACTIONS -->
+<!-- =========================
+     ADVANCED RECEIPT SHARING
+========================= -->
+
+<div class="receipt-actions">
+
+    <button id="downloadJpgBtn">
+        🖼️ Download JPG
+    </button>
+
+    <button id="printReceiptBtn">
+        📄 Save as PDF
+    </button>
+
+    <button id="shareReceiptBtn">
+        📤 Share Receipt
+    </button>
+
+    <button id="copyReceiptBtn">
+        📋 Copy Details
+    </button>
+
+    <button id="closeReceiptBtn">
+        ✕ Close
+    </button>
+
+</div>
+
+
+<div
+    class="social-share-panel"
+    id="socialSharePanel"
+>
+
+    <div class="social-share-title">
+
+        <strong>
+            📤 Share Your Receipt
+        </strong>
+
+        <span>
+            Choose how you want to share it
+        </span>
+
+    </div>
+
+
+    <div class="social-share-grid">
+
+        <button
+            id="whatsappShareBtn"
+            class="social-btn whatsapp"
+        >
+            <span>🟢</span>
+            WhatsApp
+        </button>
+
+
+        <button
+            id="facebookShareBtn"
+            class="social-btn facebook"
+        >
+            <span>🔵</span>
+            Facebook
+        </button>
+
+
+        <button
+            id="xShareBtn"
+            class="social-btn x"
+        >
+            <span>𝕏</span>
+            X
+        </button>
+
+
+        <button
+            id="emailShareBtn"
+            class="social-btn email"
+        >
+            <span>✉️</span>
+            Email
+        </button>
+
+    </div>
+
+</div>
+<!-- =========================
+     BILL HISTORY
+========================= -->
+
+<section class="card" id="billHistorySection">
+
+    <div class="section-title">
+
+        <h2>
+            📚 Bill History
+        </h2>
+
+        <button
+            id="clearHistoryBtn"
+            class="delete"
+        >
+            Clear History
+        </button>
+
+    </div>
+
+
+    <p id="historyMessage">
+        Your saved bills will appear here.
+    </p>
+
+
+    <div id="billHistory"></div>
+
+</section>
+
+    <!-- =========================
+         FOOTER
+    ========================== -->
+
+    <footer>
+
+        <strong>
+            BillSplit
+        </strong>
+
+        <p>
+            Split expenses. Settle easily.
+        </p>
+
+    </footer>
+
+
+</div>
+
+
+
+<script src="script.js"></script>
+
+
+</body>
+
+</html>
